@@ -22,6 +22,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {",
+									"    throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")",
+									"}"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -238,6 +249,17 @@
 							"script": {
 								"exec": [
 									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {",
+									"    throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -1299,7 +1321,7 @@
 							"response": []
 						}
 					],
-					"description": "For an easier understanding of a user's spending habits and sources of income the finX API provides the ability to aggregate transactions by categories or payment partners. Each grouping contains the total number of transactions, the accumulated amount, as well as the high and low values."
+					"description": "For an easier understanding of a user's spending habits and sources of income the finX API provides the ability to aggregate transactions by categories or payment partners. Each grouping contains the total number of transactions, the accumlated amount, as well as the high and low values."
 				}
 			]
 		}

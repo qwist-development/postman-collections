@@ -19,6 +19,17 @@
 						],
 						"type": "text/javascript"
 					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {",
+							"    throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")",
+							"}"
+						],
+						"type": "text/javascript"
+					}
 				}
 			],
 			"request": {

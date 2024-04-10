@@ -20,6 +20,17 @@
 						],
 						"type": "text/javascript"
 					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {",
+							"    throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")",
+							"}"
+						],
+						"type": "text/javascript"
+					}
 				}
 			],
 			"protocolProfileBehavior": {
@@ -52,7 +63,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"state\": \"test123\",\n    \"redirect_uri\": \"http://localhost\",\n    \"language\": \"de\",\n    //\"account_types\": [\"Giro account\"],\n    //\"accounts\": [{\n    //    \"id\": \"DE07900948150000002000\"\n    //}, {\n    //    \"id\": \"DE77900948150000002001\"\n    //}],\n    \"sync_period\": 90,\n    \"allow_multi_selection\": true\n}\n\n/*\n\nMandatory request parameters: `redirect_uri`\n\nFurther useful information: \n\n- `accounts`: List IBANs that will auto-select the appropriate accounts of the user with a certain bank. If only one IBAN is provided, the provider selection will be skipped as the provider will be autoselected parsed from the IBAN)\n- `account_types`: The provided account types can be: \"Giro account\" \"Savings account\" \"Daily savings account\" \"Credit card\" \"Loan account\" \"PayPal\" and \"Depot\". If provided, only those account types can be connected by the user in the widget flow (e.g. only \"Giro account\")\n- `allow_multi-selection`: indicates whether to allow multiple accounts to be selected in the widget flow by the user. It will be ignored, if a value for \"accounts\" is set. Default value: \"true\"\n- `sync_period` defines the number of days of transaction history that is requested from the financial provider. Default value: 90. Many banks provide nowadays up to 365 days of transaction history. If the value is set higher then the period the respective bank can provide, the maximum possible value of the bank will be requested. No error will occur. \n\n*/",
+					"raw": "{\n    \"state\": \"test123\",\n    \"redirect_uri\": \"http://localhost\",\n    \"language\": \"de\",\n    //\"account_types\": [\"Giro account\"],\n    //\"accounts\": [{\n    //    \"id\": \"DE07900948150000002000\"\n    //}, {\n    //    \"id\": \"DE77900948150000002001\"\n    //}],\n    \"sync_period\": 90,\n    \"allow_multi_selection\": true\n}\n\n/*\n\nMandatory request parameters: `redirect_uri`\n\nFurther useful information: \n\n- `accounts`: List IBANs that will auto-select the appropriate accounts of the user with a certain bank. If only one IBAN is provided, the provider selection will be skipped as the provider will be autoselected parsed from the IBAN)\n- `account_types`: The provided account types can be: \"Giro account\" \"Savings account\" \"Daily savings account\" \"Credit card\" \"Loan account\" \"PayPal\" and \"Depot\". If provided, only those account types can be connected by the user in the widget flow (e.g. only \"Giro account\")\n- `allow_multi-selection`: indicates whether to allow multiple accounts to be selected in the widget flow by the user. It will be ignored, if a value for \"accounts\" is set. Defaul value: \"true\"\n- `sync_period` defines the number of days of transaction history that is requested from the financial provider. Default value: 90. Many banks provide nowadays up to 365 days of transaction history. If the value is set higher then the period the respective bank can provide, the maximum possible value of the bank will be requested. No error will occur. \n\n*/",
 					"options": {
 						"raw": {
 							"language": "json"
