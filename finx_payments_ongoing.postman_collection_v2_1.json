@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "1bbb1426-0762-418c-9b54-78c1cccf46d1",
-		"name": "FinX Ongoing Payments",
+		"name": "finX Ongoing Payments",
 		"description": "## Ongoing payment\n\nOngoing payments can be used in two different ways: You can either issue a payment from a previously synchronized account by specifying the corresponding `account_id` in the request, the second option is to identify the debtor account by its IBAN. In the latter case you can still take advantage of securely storing the provider credentials for subsequent payments, but don't have to go through the full synchronization flow.\n\nThe flow resembles the onetime payment flow with the same user and bank.\n\nBank: Mockbank Decoupled/Embedded\n\nUser: figo01\n\nPassword: 654321\n\nSCA method: Auth method by phone\n\nOTP: 123456",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10164806",

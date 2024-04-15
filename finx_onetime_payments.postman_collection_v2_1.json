@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "8d01a53b-7a21-4bbc-825f-40cda07f4336",
-		"name": "FinX Onetime Payments",
+		"name": "finX Onetime Payments",
 		"description": "Use one of two POST endpoints to initiate the payment (send your browser to the address specified in `location` field of the response).\n\nIn the UI put `figo01` and `654321` as password and then select \"Auth method by phone\" , after which enter `123456` as OTP. Once the payment is successful - call the \"Get payment receipt\" to get a payment receipt of the transaction you just performed.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10164806",

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "be4e6222-3e00-4c3b-be52-98391dd580a7",
-		"name": "FinX Financial Data (one-time account access)",
+		"name": "finX Financial Data (one-time account access)",
 		"description": "One-time account access to get the account data and transaction history of the users connected bank accounts.\n\nThe interaction with the collection is as follows:\n\n- Use Giro account:\n    - Paste the link into your browser\n    - Select \"Mockbank - Embedded/Decoupled\"\n    - Enter `figo01` as username and `654321` as password. Click next\n    - Select \"Auth Meth by Phone\" as SCA method and click next\n    - Enter \"123456\" as an OTP\n    - You will be redirected to localhost - copy the whole URL and put it into the `callback_url` postman environment variable\n    - Now use the \"Exchange OAuth code\" request to exchange the OAuth code for an access token.\n    - Now you can use \"Get Accounts\" or \"Get Transactions\" endpoints to get accounts or transactions of the user accordingly.\n- Use Depot account:\n    \n    - Paste the link into your browser\n    - Select \"Demobank - 90090042\"\n    - Enter `demo` as username and password\n        \n    - Select a Depot account from the list of accounts\n        \n    - Now use the \"Exchange OAuth code\" request to exchange the OAuth code for an access token.\n        \n    - Now you can use \"Get Accounts\" or \"Get Securities\" endpoints to get accounts or transactions of the user accordingly.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10164806",

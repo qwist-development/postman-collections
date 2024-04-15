@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "bfefc9d8-abcb-422b-bfd2-623375639b7e",
-		"name": "FinX Standalone Categorization",
+		"name": "finX Standalone Categorization",
 		"description": "The standalone categorization is very simple to interact with.\n\nSimply call the \"Send transactions to categorize\" and you'll get back categorized transactions.\n\nTo understand the relationship between categories use the \"Get category tree\" call.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10164806",
