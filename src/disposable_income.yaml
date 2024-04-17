@@ -1,0 +1,145 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Disposable Income Verification
+  description: |- 
+    # Income Verification
+    The Disposable/Discretionary Income Verification endpoint enables the retrieval of aggregated income and expense data for users in real-time, facilitating the analysis of their liquidity.
+    The following terminology is used for this product:
+      1. **Income/Expense stream** is a set of transactions that belong to the same category and payment partner, i.e. a salary payment (category Salary) from a company Acme, Inc. (payment partner).
+      2. **Regular expenses** are considered to be expenses that occur on a regular schedule, it could be monthly, quarterly or even a yearly schedule, for example a monthly rent payment.
+      3. **Variable expenses** are expenses that are not done on a regular schedule, such as grocery shopping or a visit to the cinema.
+      4. **Disposable income** is the amount of income left after deducting regular expenses.
+      5. **Discretionary income** is the amount of income left after deducting both regular and variable expenses.
+
+    ## Onetime Income Report\n\nFollow these steps to perform Disposable/Discretionary Income Verification using the widget:
+    1. Start the generation of an income report by calling this endpoint to create a widget link. You will receive a JSON payload with a field `location` in it.
+    2. Forward the user to the `location` provided in the above response.
+    3. The user will then be redirected to the `redirect_uri` provided in step 1. The request contains following query-parameters\n    - `state`: The state that was provided when creating the widget link, which is used to identify a particular income report process on your side.
+      - `success`: Indicating if the account connection was successful.
+      - `code`: The authorization code to be processed by you. `code` is only returned on a successful flow.
+      - `flow_id`: This is the `id` returned in step 1 and is provided in case you do not want to keep any state on your side, but still want to be able to fetch the income report in step 5.
+    4. Exchange the [authorization code for an access token](https://docs.finx.qwist.cloud/#operation/createAccessToken).
+    5. Fetch the income report using the access token.\n6. An income report can be fetched using the following filters provided in the query:
+      - `since` - the start date of the period for which the report will be generated
+      - `until` - the end date of the period for which the report will be generated
+      - `accounts` - list of accounts that shall be included in the report
+      - `accesses` - list of accesses that shall be included in the report 
+
+    Please refer to [fetch accounts](https://docs.finx.qwist.cloud/#tag/Accounts/operation/listAccounts) on how to get the accounts and to [fetch accesses](https://docs.finx.qwist.cloud/#tag/Accesses/operation/listProviderAccesses) on how to get available accesses of a user.
+
+    ### Interaction with the UI:
+      - Select Mockbank Decoupled/Embedded
+      - Enter `figo01` and `654321` as username and password
+      - Select Auth method by phone
+      - Enter `123456` as OTP
+      - Select accounts for the income report
+      - Copy the URL to `callback_url`
+      - Call Exchange OAuth code
+      - Call Get income report"
+item:
+  - name: Create Widget Link to start the verification flow
+    request:
+      method: POST
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - income-report
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      header:
+        - key: Content-Type
+          name: Content-Type
+          type: text
+          value: application/json
+      body:
+        mode: raw
+        raw: |-
+          {
+              "state": "test123",
+              "redirect_uri": "http://localhost",
+              "language": "en",
+              "allow_multi_selection": true
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+            const resp = pm.response.json()
+            pm.environment.set("av_id",resp.id)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Exchange OAuth code
+    request:
+      method: POST
+      description: Once you copied the URL to which you were redirected to the `callback_url` environment variable - use this request to exchange the OAuth code for an access token
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - auth
+          - token
+      auth: *client_auth
+      header:
+        - "Content-Type: application/json"
+      body:
+        mode: raw
+        raw: |-
+          {
+              "grant_type": "authorization_code",
+              "code": "{{auth_code}}"
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            pm.expect(pm.environment.get("callback_url")).to.not.be.empty
+            const code = pm.environment.get("callback_url").split('&')[0].split('=')[1]
+            pm.environment.set('auth_code',code)
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(200)
+            data = pm.response.json()
+            pm.expect(data.access_token).to.not.empty
+            pm.expect(data.refresh_token).to.not.empty
+            pm.environment.set("access_token", data.access_token)
+            pm.environment.set("refresh_token", data.refresh_token)
+  - name: Get income report
+    request:
+      method: GET
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rest
+          - income-report
+      auth:
+        type: bearer
+        bearer:
+          - key: token
+            value: '{{access_token}}'
+            type: string

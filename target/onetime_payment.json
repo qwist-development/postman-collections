@@ -1,0 +1,155 @@
+{
+  "info": {
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "name": "finX Onetime Payments",
+    "description": "Use one of two POST endpoints to initiate the payment (send your browser to the address specified in `location` field of the response).\nIn the UI put `figo01` and `654321` as password and then select \"Auth method by phone\" , after which enter `123456` as OTP. Once the payment is successful - call the \"Get payment receipt\" to get a payment receipt of the transaction you just performed."
+  },
+  "item": [
+    {
+      "name": "Create Widget for PIS with debtor bank presection",
+      "request": {
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "onetime",
+            "payment"
+          ]
+        },
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "{{client_password}}",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "{{client_username}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          "Content-Type: application/json"
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"state\": \"b0bc2e10-838f-4955-b8a6-733666049655\",\n  \"redirect_uri\": \"http://localhost\",\n  \"language\": \"de\",\n  \"payment\": {\n    \"creditor\": {\n      \"iban\": \"DE86990003540000002000\",\n      \"name\": \"Peter Jackson\"\n    },\n    \"debtor\": {\n      \"iban\": \"DE07900948150000002000\"\n    },\n    \"amount\": {\n      \"value\": 57.99,\n      \"currency\": \"EUR\"\n    },\n    \"purpose\": \"Thank you for the fish\",\n    \"end_to_end_reference\": \"124/473294/384785\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": "pm.response.to.have.status(201)\ndata = pm.response.json()\npm.environment.set(\"receipt_id\", data.id)"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": "if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {\n  throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Widget for PIS with debtor selection in widget flow",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "{{client_password}}",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "{{client_username}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          "Content-Type: application/json"
+        ],
+        "url": {
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "onetime",
+            "payment"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"state\": \"b0bc2e10-838f-4955-b8a6-733666049655\",\n  \"redirect_uri\": \"http://localhost\",\n  \"language\": \"de\",\n  \"payment\": {\n    \"creditor\": {\n      \"iban\": \"DE86990003540000002000\",\n      \"name\": \"Peter Jackson\"\n    },\n    \"amount\": {\n      \"value\": 0.25,\n      \"currency\": \"EUR\"\n    },\n    \"purpose\": \"Thank you for the fish\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": "pm.response.to.have.status(201)\ndata = pm.response.json()\npm.environment.set(\"receipt_id\", data.id)"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": "if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {\n  throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get payment receipt",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "{{client_password}}",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "{{client_username}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "payment-receipts",
+            "{{receipt_id}}"
+          ]
+        }
+      }
+    }
+  ]
+}

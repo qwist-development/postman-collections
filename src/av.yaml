@@ -1,0 +1,125 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Account Verification
+  description: |-
+    This collection can be used to test the account verification product - that is
+    check how well does the provided name match the name of the account owner.
+
+    Let's do account verification for the name "Hans Meier"
+
+    The interaction with the collection is as follows:
+      1. Use the "Create Widget Link to start the verification flow" request to get a URL to the UI (Widget) - you will need to follow that URL in your browser and complete the bank account connection there. 
+         In the end you will be redirected to `http://localhost` and the redirect link will contain some additional information. Copy the whole URL and paste it into the `callback_url` environment variable.
+        1. Paste the link into your browser and enter `figo01` as username and `654321` as password. Click next
+        2. Select "Mockbank - Decoupled/Embedded"
+        3. Enter `figo01` and `654321` as username and password correspondingly
+        4. Select "Auth Meth by Phone" as SCA method and click next
+        5. Enter "123456" as an OTP
+        6. Select an account which you want to verify against
+        7. You will be redirected to localhost - copy the whole URL and put it into the `callback_url` postman environment variable
+      2. Now use the "Exchange OAuth code" request to exchange the OAuth code for an access token.
+      3. Now you can use "Get Accounts" or "Get Transactions" endpoints to get accounts or transactions of the user accordingly."
+item:
+  - name: Create Widget Link to start the verification flow
+    request:
+      method: POST
+      header: &common_headers
+        - "Content-Type: application/json"
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - account-verification
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      body:
+        mode: raw
+        raw: |-
+          {
+              "state": "test123",
+              "redirect_uri": "http://localhost",
+              "language": "de",
+              "name": "Hans Peter Meier"
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: test
+        script:
+          exec: |-
+            pm.response.to.have.status(201)
+            const resp = pm.response.json()
+            pm.environment.set("av_id",resp.id)
+          type: text/javascript
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+                throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Exchange OAuth code
+    description: Once you copied the URL to which you were redirected to the `callback_url` environment variable - use this request to exchange the OAuth code for an access token
+    request:
+      method: POST
+      header: *common_headers
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - auth
+          - token
+      auth: *client_auth
+      body:
+        mode: raw
+        raw: |-
+          {
+              "grant_type": "authorization_code",
+              "code": "{{auth_code}}"
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            pm.expect(pm.environment.get("callback_url")).to.not.be.empty
+            const code = pm.environment.get("callback_url").split('&')[0].split('=')[1]
+            pm.environment.set('auth_code',code)
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(200)
+            data = pm.response.json()
+            pm.expect(data.access_token).to.not.empty
+            pm.expect(data.refresh_token).to.not.empty
+            pm.environment.set("access_token", data.access_token)
+            pm.environment.set("refresh_token", data.refresh_token)
+  - name: Get Account Verification Receipt
+    request:
+      method: GET
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rest
+          - account-verifications
+          - '{{av_id}}'
+      auth:
+        type: bearer
+        bearer:
+          - key: token
+            value: '{{access_token}}'
+            type: string

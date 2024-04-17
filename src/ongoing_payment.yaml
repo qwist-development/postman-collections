@@ -1,0 +1,143 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Ongoing Payments
+  description: |-
+    ## Ongoing payment
+
+    Ongoing payments can be used in two different ways. 
+    You can either issue a payment from a previously synchronized account by specifying the corresponding `account_id` in the request, the second option is to identify the debtor account by its IBAN. 
+    In the latter case you can still take advantage of securely storing the provider credentials for subsequent payments, but don't have to go through the full synchronization flow.
+
+    The flow resembles the onetime payment flow with the same user and bank.
+
+    Bank: Mockbank Decoupled/Embedded
+    User: figo01
+    Password: 654321
+    SCA method: Auth method by phone
+    OTP: 123456
+item:
+  - name: Create Widget for PIS with debtor bank presection
+    request:
+      method: POST
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      header:
+        - "Content-Type: application/json"
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - ongoing
+          - payment
+      body:
+        mode: raw
+        options:
+          raw:
+            language: json
+        raw: |-
+          {
+            "state": "b0bc2e10-838f-4955-b8a6-733666049655",
+            "redirect_uri": "http://localhost",
+            "language": "de",
+            "save_secrets": "false",
+            "user_id": "postman-collection-{{$guid}}@qwist.com",
+            "payment": {
+              "creditor": {
+                "iban": "DE86990003540000002000",
+                "name": "Peter Jackson"
+              },
+              "debtor": {
+                "iban": "DE07900948150000002000"
+              },
+              "amount": {
+                "value": 57.99,
+                "currency": "EUR"
+              },
+              "purpose": "Thank you for the fish",
+              "end_to_end_reference": "124/473294/384785"
+            }
+          }
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+            data = pm.response.json()
+            pm.environment.set("receipt_id", data.id)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new error("client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Create Widget for PIS with debtor selection in widget flow
+    request:
+      method: POST
+      auth: *client_auth
+      header:
+        - "Content-Type: application/json"
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - payment
+      body:
+        mode: raw
+        options:
+          raw:
+            language: json
+        raw: |-
+          {
+            "state": "b0bc2e10-838f-4955-b8a6-733666049655",
+            "redirect_uri": "http://localhost",
+            "language": "de",
+            "save_secrets": "false",
+            "payment": {
+              "creditor": {
+                "iban": "DE86990003540000002000",
+                "name": "Peter Jackson"
+              },
+              "amount": {
+                "value": 0.25,
+                "currency": "EUR"
+              },
+              "purpose": "Thank you for the fish"
+            }
+          }
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+            data = pm.response.json()
+            pm.environment.set("receipt_id", data.id)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Get payment receipt
+    request:
+      method: GET
+      auth: *client_auth
+      header:
+        - "Content-Type: application/json"
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - payment-receipts
+          - '{{receipt_id}}'

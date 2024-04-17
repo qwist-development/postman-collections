@@ -1,0 +1,558 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: FinX Multibanking & PFM (ongoing access)
+  description: |-
+    In this postman-collection we will consider an ongoing account connection - which means the user and his/her transactions will be stored in finx database and subsequent account synchronizations will only store new transactions that were not retrieved before.
+
+    We will also go through the process of refreshing an `access_token` using a `refresh_token`.
+
+    Scenario:
+    - Refresh an `access_token`:
+      - Use the "Create Widget Link" request to start the flow - then copy the URL returned in the `location` response field - paste it into your browser and follow it.
+          - Paste the link into your browser and enter `figo01` as username and `654321` as password. Click next
+          - Select "Auth Meth by Phone" as SCA method and click next
+          - Enter "123456" as an OTP
+          - You will be redirected to localhost - copy the whole URL and put it into the `callback_url` postman environment variable
+      - In the UI - perform all necessary actions to connect your bank account
+      - [Eventually you'll be redirected to <code>http://localhost</code>](http://localhost) - (NOTE: if you're running any application on local port 80 - then the redirect URL can potentially be changed) - copy the URL to which you were redirected and paste it into the `callback_url` environment variable of postman.
+      - Then use the "Create access token from callback URL" - to exchange your OAuth code (which is part of the `callback_url` (see `state` parameter which is a JWT token)) for an `access_token`. Look at the response JSON object - notice `access_token` and `refresh_token`
+      - Finally use the "Retrieve new access token using refresh token" - to refresh your `access_token` using the `refresh_token` . Again - check the response, you'll see different access and refresh tokens - you can compare them to the ones received in previous step.
+    - Synchronize account:
+      - Since we're doing ongoing account sync - you can synchronize your existing account again.
+      - Use the "Sync. user account" request to start the flow - then copy the URL returned in the `location` response field - paste it into your browser and follow it.
+      - In the UI - perform all necessary actions to sync. the account
+      - Eventually you'll see the message about successful synchronization and a redirect to the redirect URI you specified with `success=true` parameter.
+
+    In the end you can use the self-explanatory `GET` requests to get some data from your account. Please call those endpoints in the order they put in the collection from top to bottom. Some of them depend on the results of previous ones.
+item:
+  - name: Initial Account Connection
+    item:
+      - name: Create Widget Link
+        request:
+          method: POST
+          auth: &client_auth
+            type: basic
+            basic:
+              - key: password
+                value: '{{client_password}}'
+                type: string
+              - key: username
+                value: '{{client_username}}'
+                type: string
+          header:
+            - "Content-Type: application/json"
+          url:
+            host:
+              - '{{host}}'
+            path:
+              - ongoing
+              - access
+          body:
+            mode: raw
+            options:
+              raw:
+                language: json
+            raw: |-
+              {
+                  "state": "test123",
+                  "redirect_uri": "http://localhost",
+                  "language": "en",
+                  "allow_multi_selection": true,
+                  "sync_period": 90,
+                  "save_secrets": false,
+                  "user_id": "{{user_id}}"
+              }
+        event:
+          - listen: prerequest
+            script:
+              type: text/javascript
+              exec: |-
+                if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+                  throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+                }
+                var uuid = require("uuid")
+                pm.environment.set("user_id", "postman-collection-" + uuid.v4() + "@qwist.com")
+      - name: Exchange OAuth code
+        request:
+          method: POST
+          auth: *client_auth
+          header:
+            - "Content-Type: application/json"
+          url:
+            host:
+              - '{{host}}'
+            path:
+              - auth
+              - token
+          body:
+            mode: raw
+            options:
+              raw:
+                language: json
+            raw: |-
+              {
+                  "grant_type": "authorization_code",
+                  "code": "{{auth_code}}"
+              }
+        event:
+          - listen: prerequest
+            script:
+              type: text/javascript
+              exec: |-
+                pm.expect(pm.environment.get("callback_url")).to.not.be.empty
+                const code = pm.environment.get("callback_url").split("&")[0].split("=")[1]
+                pm.environment.set("auth_code",code)
+          - listen: test
+            script:
+              type: text/javascript
+              exec: |-
+                pm.response.to.have.status(200)
+                data = pm.response.json()
+                pm.expect(data.access_token).to.not.empty
+                pm.expect(data.refresh_token).to.not.empty
+                pm.environment.set("access_token", data.access_token)
+                pm.environment.set("refresh_token", data.refresh_token)
+                pm.sendRequest({
+                    url:  pm.environment.get("host") + "/rest/accounts",
+                    method: "GET",
+                    header: {
+                        "content-type": "application/json",
+                        "Authorization": "Bearer " + pm.environment.get("access_token")
+                    },
+                }, (err, res) => {
+                    pm.environment.set("finx_account_id", res.json().accounts[0].account_id)
+                })
+      - name: Retrieve new access token using refresh token
+        request:
+          method: POST
+          auth: *client_auth
+          url:
+            host:
+              - '{{host}}'
+            path:
+              - auth
+              - token
+          header:
+            - "Content-Type: application/json"
+          body:
+            mode: raw
+            options:
+              raw:
+                language: json
+            raw: |-
+              {
+                  "grant_type": "refresh_token",
+                  "refresh_token": "{{refresh_token}}"
+              }
+        event:
+          - listen: test
+            script:
+              type: text/javascript
+              exec: |-
+                pm.response.to.have.status(200)
+                data = pm.response.json()
+                pm.expect(data.access_token).to.not.empty
+                pm.expect(data.refresh_token).to.not.empty
+                pm.environment.set("access_token", data.access_token)
+                pm.environment.set("refresh_token", data.refresh_token)
+  - name: Ongoing account synchronization
+    item:
+      - name: Sync. user account
+        request:
+          method: POST
+          auth: *client_auth
+          header:
+            - "Content-Type: application/json"
+          url:
+            host:
+              - '{{host}}'
+            path:
+              - ongoing
+              - sync
+          body:
+            mode: raw
+            options:
+              raw:
+                language: json
+            raw: |-
+              {
+                  "state": "test123",
+                  "redirect_uri": "http://localhost",
+                  "language": "en",
+                  "sync_period": 90,
+                  "save_secrets": false,
+                  "account_ids": ["{{finx_account_id}}"],
+                  "user_id": "{{user_id}}"
+              }
+        event:
+          - listen: prerequest
+            script:
+              type: text/javascript
+              exec: |-
+                if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+                  throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+                }
+  - name: Account data & enrichments
+    item:
+      - name: Accounts, transactions and securities
+        item:
+          - name: Get all accounts
+            request:
+              method: GET
+              auth: &user_auth
+                type: bearer
+                bearer:
+                  - key: token
+                    value: '{{access_token}}'
+                    type: string
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+          - name: Get single account
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+                  - '{{finx_account_id}}'
+          - name: Get transactions for single account
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+                  - '{{finx_account_id}}'
+                  - transactions
+                query:
+                  - key: include_statistics
+                    value: "true"
+                    disabled: true
+          - name: Get transactions for all accounts
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - transactions
+                query:
+                  - key: include_statistics
+                    value: "true"
+                    disabled: true
+          - name: Get securities
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - securities
+      - name: Contracts
+        item:
+          - name: Get all contracts of user
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - contracts
+                query:
+                  - key: offset
+                    value: "true"
+                    disabled: true
+                  - key: count
+                    value: "1000"
+                    disabled: true
+            event:
+              - listen: test
+                script:
+                  type: text/javascript
+                  exec: |-
+                    pm.response.to.have.status(200)
+                    data = pm.response.json()
+                    pm.environment.set("finx_contract_id", data[0].id)
+          - name: Get contracts of account
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+                  - '{{finx_account_id}}'
+                  - contracts
+                query:
+                  - key: offset
+                    value: "true"
+                    disabled: true
+                  - key: count
+                    value: "1000"
+                    disabled: true
+          - name: Get all payment partners
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - payment-partners
+            event:
+              - listen: test
+                script:
+                  type: text/javascript
+                  exec: |-
+                    pm.response.to.have.status(200)
+                    data = pm.response.json()
+                    pm.environment.set("finx_pp_id", data[0].id)
+          - name: Get single contract
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - contracts
+                  - '{{finx_contract_id}}'
+                query:
+                  - key: offset
+                    value: "true"
+                    disabled: true
+                  - key: count
+                    value: "1000"
+                    disabled: true
+          - name: Delete contract
+            request:
+              method: DELETE
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - contracts
+                  - '{{finx_contract_id}}'
+      - name: Aggregations
+        item:
+          - name: Get categories for user
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - categories
+                query:
+                  - key: accounts
+                    value: '{{account_id}}'
+                    disabled: true
+                  - key: period
+                    value: 2021-01
+                    disabled: true
+                  - key: sort
+                    value: desc
+                    disabled: true
+                  - key: accesses
+                    value: '{{access_id}}'
+                    disabled: true
+                  - key: currency
+                    value: EUR
+                    disabled: true
+                  - key: since
+                    value: "2021-01-15"
+                    disabled: true
+                  - key: until
+                    value: "2021-01-31"
+                    disabled: true
+                  - key: amount_gte
+                    value: '#trx with amount equal or greater than this value'
+                    disabled: true
+                  - key: amount_lte
+                    value: '#trx with amount less than this value'
+                    disabled: true
+          - name: Get categories for account
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+                  - '{{finx_account_id}}'
+                  - categories
+                query:
+                  - key: period
+                    value: 2021-01
+                    disabled: true
+                  - key: sort
+                    value: desc
+                    disabled: true
+                  - key: accesses
+                    value: '{{access_id}}'
+                    disabled: true
+                  - key: currency
+                    value: EUR
+                    disabled: true
+                  - key: since
+                    value: "2021-01-15"
+                    disabled: true
+                  - key: until
+                    value: "2021-01-31"
+                    disabled: true
+                  - key: amount_gte
+                    value: '#trx with amount equal or greater than this value'
+                    disabled: true
+                  - key: amount_lte
+                    value: '#trx with amount less than this value'
+                    disabled: true
+          - name: Get category tree (Client_auth)
+            request:
+              method: GET
+              auth: *client_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - category-tree
+          - name: Get payment partners for user
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - payment-partners
+                query:
+                  - key: accounts
+                    value: '{{account_id}}'
+                    disabled: true
+                  - key: period
+                    value: 2020-06
+                    disabled: true
+                  - key: sort
+                    value: desc
+                    disabled: true
+                  - key: accesses
+                    value: ""
+                    disabled: true
+                  - key: currency
+                    value: ""
+                    disabled: true
+                  - key: since
+                    value: ""
+                    disabled: true
+                  - key: until
+                    value: ""
+                    disabled: true
+                  - key: amount_gte
+                    value: ""
+                    disabled: true
+                  - key: amount_lt
+                    value: ""
+                    disabled: true
+          - name: Get payment partners for account
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - accounts
+                  - '{{finx_account_id}}'
+                  - payment-partners
+                query:
+                  - key: period
+                    value: 2020-06
+                    disabled: true
+                  - key: sort
+                    value: desc
+                    disabled: true
+                  - key: currency
+                    value: ""
+                    disabled: true
+                  - key: since
+                    value: ""
+                    disabled: true
+                  - key: until
+                    value: ""
+                    disabled: true
+                  - key: amount_gte
+                    value: ""
+                    disabled: true
+                  - key: amount_lt
+                    value: ""
+                    disabled: true
+          - name: Get financial timeline
+            event:
+            request:
+              method: GET
+              auth: *user_auth
+              url:
+                host:
+                  - '{{host}}'
+                path:
+                  - rest
+                  - timeline
+                query:
+                  - key: since
+                    value: ""
+                    disabled: true
+                  - key: until
+                    value: ""
+                    disabled: true
+                  - key: frequency
+                    value: ""
+                    description: |-
+                      default: monthly
+                      Enum: "daily" "weekly" "monthly" "quarterly" "yearly"
+                      Example: frequency=weekly
+                    disabled: true
+                  - key: currency
+                    value: null
+                    description: 'default: "EUR"'
+                    disabled: true
+                  - key: accounts
+                    value: null
+                    description: 'account_ids to be included. Example: accounts=A1.1,A1.3'
+                    disabled: true
+                  - key: categories
+                    value: null
+                    description: Comma-separated list of custom category IDs. Only transactions matching these custom categories will be selected.
+                    disabled: true
+                  - key: payment_partners
+                    value: null
+                    description: |-
+                      Example: payment_partners=e89887dc-3eec-42cf-92eb-c83c772d99fd
+                      Comma-separated list of payment partner IDs. Only transactions corresponding to these payment partners will be selected.
+                    disabled: true
