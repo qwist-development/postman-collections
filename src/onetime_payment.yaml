@@ -1,0 +1,127 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Onetime Payments
+  description: |-
+    Use one of two POST endpoints to initiate the payment (send your browser to the address specified in `location` field of the response).
+    In the UI put `figo01` and `654321` as password and then select "Auth method by phone" , after which enter `123456` as OTP. Once the payment is successful - call the "Get payment receipt" to get a payment receipt of the transaction you just performed.
+item:
+  - name: Create Widget for PIS with debtor bank presection
+    request:
+      method: POST
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - payment
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      header:
+        - "Content-Type: application/json"
+      body:
+        mode: raw
+        options:
+          raw:
+            language: json
+        raw: |-
+          {
+            "state": "b0bc2e10-838f-4955-b8a6-733666049655",
+            "redirect_uri": "http://localhost",
+            "language": "de",
+            "payment": {
+              "creditor": {
+                "iban": "DE86990003540000002000",
+                "name": "Peter Jackson"
+              },
+              "debtor": {
+                "iban": "DE07900948150000002000"
+              },
+              "amount": {
+                "value": 57.99,
+                "currency": "EUR"
+              },
+              "purpose": "Thank you for the fish",
+              "end_to_end_reference": "124/473294/384785"
+            }
+          }
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+            data = pm.response.json()
+            pm.environment.set("receipt_id", data.id)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Create Widget for PIS with debtor selection in widget flow
+    request:
+      method: POST
+      auth: *client_auth
+      header:
+        - "Content-Type: application/json"
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - payment
+      body:
+        mode: raw
+        options:
+          raw:
+            language: json
+        raw: |-
+          {
+            "state": "b0bc2e10-838f-4955-b8a6-733666049655",
+            "redirect_uri": "http://localhost",
+            "language": "de",
+            "payment": {
+              "creditor": {
+                "iban": "DE86990003540000002000",
+                "name": "Peter Jackson"
+              },
+              "amount": {
+                "value": 0.25,
+                "currency": "EUR"
+              },
+              "purpose": "Thank you for the fish"
+            }
+          }
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+            data = pm.response.json()
+            pm.environment.set("receipt_id", data.id)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Get payment receipt
+    request:
+      method: GET
+      auth: *client_auth
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - payment-receipts
+          - '{{receipt_id}}'

@@ -1,0 +1,192 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Standalone Categorization
+  description: |-
+    The standalone categorization is very simple to interact with.
+    Simply call the "Send transactions to categorize" and you'll get back categorized transactions.
+    To understand the relationship between categories use the "Get category tree" call.
+item:
+  - name: Send transactions to categorize
+    event:
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+              throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+    request:
+      method: POST
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rpc
+          - categorize
+      body:
+        mode: raw
+        options:
+          raw:
+            language: json
+        raw: |-
+          [
+                  {
+                      "currency": "EUR",
+                      "name": "PayPal (Europe) S.a.r.l. et Cie., S.C.A.",
+                      "amount": -9.99,
+                      "booked": true,
+                      "id": "T855975904752173059.55",
+                      "iban": "DE88500700100175526303",
+                      "account_number": "175526303",
+                      "creditor_id": "LU96ZZZ0000000000000000058",
+                      "bank_code": "50070010",
+                      "booked_at": "2023-04-03T00:00:00.000Z",
+                      "bic": "DEUTDEFFXXX",
+                      "purpose": "PP.8419.PP . SPOTIFY,Ihr Einkauf bei SPOTIFY"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "HUK-COBURG UNTERNEHMENSGRUPPE",
+                      "amount": -588.89,
+                      "booked": true,
+                      "id": "T855975904752173059.54",
+                      "iban": "DE14700500000002034343",
+                      "end_to_end_reference": "212+ZKLE 27.06.20 310/151355-W F",
+                      "mandate_reference": "MY024161048",
+                      "creditor_id": "DE17ZZZ00000031285",
+                      "booked_at": "2023-04-03T00:00:00.000Z",
+                      "bic": "BYLADEMMXXX",
+                      "purpose": "SVWZ+HUK-COBURG, KRANKENVERSICHERUNG 310/151355-WABWA+HUK-COBURG-KRANKENVERSICHERUNG AG"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "Hansen Immobilien Verwaltung GmbH+ Co. KG",
+                      "amount": -1480.00,
+                      "booked": true,
+                      "id": "T855975904752173059.53",
+                      "iban": "DE94200505501238211682",
+                      "booked_at": "2023-04-03T00:00:00.000Z",
+                      "bic": "HASPDEHHXXX",
+                      "purpose": "Miete VERTRAGSNR. 0297-1021-03"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "Hamburger Hochbahn AG",
+                      "amount": -55.99,
+                      "booked": true,
+                      "id": "T855975904752173059.52",
+                      "iban": "DE45200505501280235001",
+                      "end_to_end_reference": "0011243786 4072661078",
+                      "mandate_reference": "VMH010127450001",
+                      "creditor_id": "DE3900100000393766",
+                      "booked_at": "2023-04-01T00:00:00.000Z",
+                      "bic": "HASPDEHHXXX",
+                      "purpose": "EREF+0011243786 4072661078MREF+VMH010127450001CRED+DE3900100000393766SVWZ+0011243786 4072661078Referenz HVV ABOABWA+Hamburger Hochbahn AG"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "BIO COMPANY GmbH",
+                      "amount": -58.92,
+                      "booked": true,
+                      "id": "T855975904752173059.51",
+                      "iban": "DE37500400000582461009",
+                      "end_to_end_reference": "482092488274022",
+                      "account_number": "582461009",
+                      "bank_code": "50040000",
+                      "booked_at": "2023-03-31T00:00:00.000Z",
+                      "bic": "COBADEFFXXX",
+                      "purpose": "SVWZ+2023-02 Debitk.00 VISA Debit+ABWA+BIO COMPANY GmbH//Hamburg/DE"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "Deutsche Lufthansa Aktiengesellschaft",
+                      "amount": 4450.00,
+                      "booked": true,
+                      "id": "T855975904752173059.50",
+                      "iban": "DE30370700600106141506",
+                      "end_to_end_reference": "2302211148-0000008",
+                      "account_number": "106141506",
+                      "bank_code": "37070060",
+                      "booked_at": "2023-03-29T00:00:00.000Z",
+                      "bic": "DEUTDEDKXXX",
+                      "purpose": "Lohn/Gehalt Meiser,Hans MA-Nr.7652943"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "Telekom Deutschland GmbH",
+                      "amount": -39.95,
+                      "booked": true,
+                      "id": "T855975904752173059.48",
+                      "iban": "DE68700202700667302269",
+                      "end_to_end_reference": "Zahlbeleg 334690320052",
+                      "mandate_reference": "DE000205000600000000000000007707517",
+                      "account_number": "667302269",
+                      "creditor_id": "DE93ZZZ00000078611",
+                      "bank_code": "70020270",
+                      "sepa_remittance_info": "Mobilfunk Kundenkonto0054719158 RG 26542895000881",
+                      "booked_at": "2023-03-28T00:00:00.000Z",
+                      "bic": "HYVEDEMMXXX",
+                      "purpose": "Mobilfunk Kundenkonto0054719158 RG 26542895000881"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "1u1 Telecom GmbH",
+                      "amount": -47.83,
+                      "booked": true,
+                      "id": "T855975904752173059.47",
+                      "iban": "DE97500400000589011600",
+                      "mandate_reference": "0200014521636",
+                      "account_number": "589011600",
+                      "creditor_id": "DE77ZZZ00000569719",
+                      "bank_code": "50040000",
+                      "booked_at": "2023-03-27T00:00:00.000Z",
+                      "bic": "COBADEFFXXX",
+                      "purpose": "KD-Nr. K238402669/ RG-Nr. 150814751092"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "AMAZON EU S.A R.L., NIEDERLASSUNG DEUTSCHLAND",
+                      "amount": -20.98,
+                      "booked": true,
+                      "id": "T855975904752173059.46",
+                      "iban": "DE93300308800013441006",
+                      "mandate_reference": "l87TK.XzAQGtBDZaQ.ZmR18u8C.m5X",
+                      "account_number": "13441006",
+                      "creditor_id": "DE24ZZZ00000561652",
+                      "bank_code": "30030880",
+                      "booked_at": "2023-03-17T00:00:00.000Z",
+                      "bic": "TUBDDEDDXXX",
+                      "purpose": "306-0928288-4794733 Amazon.de 12YYDIND6Y8OM7X9"
+                  },
+                  {
+                      "currency": "EUR",
+                      "name": "REWE Hamburg EppenHamburg",
+                      "amount": -36.10,
+                      "booked": true,
+                      "id": "T855975904752173059.45",
+                      "iban": "DE21700202700015820754",
+                      "account_number": "15820754",
+                      "bank_code": "70020270",
+                      "booked_at": "2023-03-16T00:00:00.000Z",
+                      "bic": "HYVEDEMMXXX",
+                      "purpose": "SVWZ+2022-12-19T12.41 21912Debitk.0 2022-12 Bargeldausz. 120,00ABWA+REWE SAGT DANKE. 41400673//Hamburg Ottensen/DE"
+                  }
+              ]
+  - name: Get category tree
+    request:
+      method: GET
+      auth: *client_auth
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - category-tree

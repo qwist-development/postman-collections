@@ -1,0 +1,152 @@
+info:
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+  name: finX Financial Data (one-time account access)
+  description: |- 
+    One-time account access to get the account data and transaction history of the users connected bank accounts.
+
+    The interaction with the collection is as follows.
+
+    Use Giro account - Execute "Obtain URL to start the AIS flow via Widget" request:
+      1. Paste the link into your browser
+      2. Select "Mockbank - Embedded/Decoupled"
+      3. Enter `figo01` as username and `654321` as password. Click next
+      4. Select "Auth Meth by Phone" as SCA method and click next
+      5. Enter "123456" as an OTP
+      6. You will be redirected to localhost - copy the whole URL and put it into the `callback_url` postman environment variable
+      7. Now use the "Exchange OAuth code" request to exchange the OAuth code for an access token.
+      8. Now you can use "Get Accounts" or "Get Transactions" endpoints to get accounts or transactions of the user accordingly.
+    Use Depot account - Execute "Obtain URL to start the AIS flow via Widget" request:
+      1. Paste the link into your browser
+      2. Select "Demobank - 90090042"
+      3. Enter `demo` as username and password
+      4. Select a Depot account from the list of accounts
+      5. Now use the "Exchange OAuth code" request to exchange the OAuth code for an access token.
+      6. Now you can use "Get Accounts" or "Get Securities" endpoints to get accounts or transactions of the user accordingly."
+item:
+  - name: Obtain URL to start the AIS flow via Widget
+    request:
+      method: POST
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - onetime
+          - access
+      auth: &client_auth
+        type: basic
+        basic:
+          - key: password
+            value: '{{client_password}}'
+            type: string
+          - key: username
+            value: '{{client_username}}'
+            type: string
+      header:
+        - "Content-Type: application/json"
+      body:
+        mode: raw
+        raw: |- 
+          {
+            "state": "test123",
+            "redirect_uri": "http://localhost",
+            "language": "de",
+            //"account_types": ["Giro account"],
+            //"accounts": [{
+            //    "id": "DE07900948150000002000"
+            //}, {
+            //    "id": "DE77900948150000002001"
+            //}],
+            "sync_period": 90,
+            "allow_multi_selection": true
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(201)
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            if (!pm.environment.get("client_username") || !pm.environment.get("client_password")) {
+                throw new Error("Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact")
+            }
+  - name: Exchange OAuth code
+    request:
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - auth
+          - token
+      method: POST
+      auth: *client_auth
+      header:
+        - "Content-Type: application/json"
+      body:
+        mode: raw
+        raw: |-
+          {
+              "grant_type": "authorization_code",
+              "code": "{{auth_code}}"
+          }
+        options:
+          raw:
+            language: json
+    event:
+      - listen: prerequest
+        script:
+          type: text/javascript
+          exec: |-
+            pm.expect(pm.environment.get("callback_url")).to.not.be.empty
+            const code = pm.environment.get("callback_url").split('&')[0].split('=')[1]
+            pm.environment.set('auth_code',code)
+      - listen: test
+        script:
+          type: text/javascript
+          exec: |-
+            pm.response.to.have.status(200)
+            data = pm.response.json()
+            pm.expect(data.access_token).to.not.empty
+            pm.expect(data.refresh_token).to.not.empty
+            pm.environment.set("access_token", data.access_token)
+            pm.environment.set("refresh_token", data.refresh_token)
+  - name: Get accounts
+    request:
+      method: GET
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rest
+          - accounts
+      auth: &user_auth
+        type: bearer
+        bearer:
+          - key: token
+            value: '{{access_token}}'
+            type: string
+  - name: Get transactions
+    request:
+      method: GET
+      auth: *user_auth
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rest
+          - transactions
+  - name: Get securities
+    request:
+      method: GET
+      auth: *user_auth
+      url:
+        host:
+          - '{{host}}'
+        path:
+          - rest
+          - securities
