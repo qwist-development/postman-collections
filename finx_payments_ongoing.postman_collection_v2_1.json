@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "1bbb1426-0762-418c-9b54-78c1cccf46d1",
+		"_postman_id": "676e2399-9331-4a5e-b816-7e78737d7a32",
 		"name": "finX Ongoing Payments",
 		"description": "## Ongoing payment\n\nOngoing payments can be used in two different ways: You can either issue a payment from a previously synchronized account by specifying the corresponding `account_id` in the request, the second option is to identify the debtor account by its IBAN. In the latter case you can still take advantage of securely storing the provider credentials for subsequent payments, but don't have to go through the full synchronization flow.\n\nThe flow resembles the onetime payment flow with the same user and bank.\n\nBank: Mockbank Decoupled/Embedded\n\nUser: figo01\n\nPassword: 654321\n\nSCA method: Auth method by phone\n\nOTP: 123456",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10164806",
-		"_collection_link": "https://martian-station-516509.postman.co/workspace/2214353e-a526-4006-93de-b08ebe2014ae/collection/10164806-1bbb1426-0762-418c-9b54-78c1cccf46d1?action=share&source=collection_link&creator=10164806"
+		"_collection_link": "https://martian-station-516509.postman.co/workspace/FinX-Postman-Collections~2214353e-a526-4006-93de-b08ebe2014ae/collection/10164806-676e2399-9331-4a5e-b816-7e78737d7a32?action=share&source=collection_link&creator=10164806"
 	},
 	"item": [
 		{
@@ -29,7 +29,9 @@
 						"exec": [
 							"if (!pm.environment.get(\"client_username\") || !pm.environment.get(\"client_password\")) {",
 							"    throw new Error(\"Client credentials are missing: please reach out to your contact person or ask for client credentials via the form: https://qwist.com/contact\")",
-							"}"
+							"}",
+							"var uuid = require(\"uuid\")",
+							"pm.environment.set(\"user_id\", \"postman-collection-\" + uuid.v4() + \"@qwist.com\")"
 						],
 						"type": "text/javascript"
 					}
@@ -62,7 +64,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"state\": \"b0bc2e10-838f-4955-b8a6-733666049655\",\n  \"redirect_uri\": \"http://localhost\",\n  \"language\": \"de\",\n  \"save_secrets\": \"false\",\n  \"user_id\": \"user@email.com\",\n  \"payment\": {\n    \"creditor\": {\n      \"iban\": \"DE86990003540000002000\",\n      \"name\": \"Peter Jackson\"\n    },\n    \"debtor\": {\n      \"iban\": \"DE07900948150000002000\"\n    },\n    \"amount\": {\n      \"value\": 57.99,\n      \"currency\": \"EUR\"\n    },\n    \"purpose\": \"Thank you for the fish\",\n    \"end_to_end_reference\": \"124/473294/384785\"\n  }\n}\n\n\n/* Useful information\n\nMandatory request parameters: redirect_uri, creditor, amount, purpose\n\nThe user can store the credentials within the first payments. For subsequent payments from the same debtor account of the user, only the Strong Customer Authentication for the payment initiation will be required. This means that the user does not need to enter the account credentials again.\n\nOptional: \"readout\" request parameter to also get the account and transaction data of the users bank account. \nDefault: []\nItems Enum: \"ACCOUNTS\" \"TRANSACTIONS\"\nDefines entries that shall be available for a readout after the payment has been initiated. Depending on the values provided the account information and transaction history of the source account can be retrieved. This will implicitly perform an account synchronization and might require additional challenges to be answered in the scope of the Strong Customer Authentication.\n\nMockbank Demobank Credentials: figo01 / 654321 with OTP: 123456 )\n*/\n",
+					"raw": "{\n  \"state\": \"b0bc2e10-838f-4955-b8a6-733666049655\",\n  \"redirect_uri\": \"http://localhost\",\n  \"language\": \"de\",\n  \"save_secrets\": \"false\",\n  \"user_id\": \"{{user_id}}\",\n  \"payment\": {\n    \"creditor\": {\n      \"iban\": \"DE86990003540000002000\",\n      \"name\": \"Peter Jackson\"\n    },\n    \"debtor\": {\n      \"iban\": \"DE07900948150000002000\"\n    },\n    \"amount\": {\n      \"value\": 57.99,\n      \"currency\": \"EUR\"\n    },\n    \"purpose\": \"Thank you for the fish\",\n    \"end_to_end_reference\": \"124/473294/384785\"\n  }\n}\n\n\n/* Useful information\n\nMandatory request parameters: redirect_uri, creditor, amount, purpose\n\nThe user can store the credentials within the first payments. For subsequent payments from the same debtor account of the user, only the Strong Customer Authentication for the payment initiation will be required. This means that the user does not need to enter the account credentials again.\n\nOptional: \"readout\" request parameter to also get the account and transaction data of the users bank account. \nDefault: []\nItems Enum: \"ACCOUNTS\" \"TRANSACTIONS\"\nDefines entries that shall be available for a readout after the payment has been initiated. Depending on the values provided the account information and transaction history of the source account can be retrieved. This will implicitly perform an account synchronization and might require additional challenges to be answered in the scope of the Strong Customer Authentication.\n\nMockbank Demobank Credentials: figo01 / 654321 with OTP: 123456 )\n*/\n",
 					"options": {
 						"raw": {
 							"language": "json"
